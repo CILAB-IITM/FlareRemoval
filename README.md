@@ -15,6 +15,12 @@ conda activate flare
 bash execute.sh
 ```
 
+
+you can find the pretrained model here
+https://drive.google.com/drive/folders/1ngjUh6UzA99-XLi6esK9OdP7ORhU6i8R
+
+
+
 ```
 python remove_flare.py --input_dir=/home/saiteja/flare_IITM_Research/datasets/submissions/val_input_2k/val_input_2k_bicubic   --out_dir=path/to/output/dir --model=Uformer    --batch_size=2    --ckpt=/home/saiteja/flare_IITM_Research/Improving-Lens-Flare-Removal/trained_model
 ```
