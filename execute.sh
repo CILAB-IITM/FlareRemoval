@@ -1,0 +1,1 @@
+python remove_flare.py --input_dir=/home/saiteja/flare_IITM_Research/datasets/submissions/val_input_2k/val_input_2k_bicubic   --out_dir=path/to/output/dir --model=Uformer    --batch_size=2    --ckpt=/home/saiteja/flare_IITM_Research/Improving-Lens-Flare-Removal/trained_model
