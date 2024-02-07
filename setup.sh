@@ -1,0 +1,1 @@
+pip install git+https://github.com/sberbank-ai/Real-ESRGAN.git
