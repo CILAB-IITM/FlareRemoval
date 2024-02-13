@@ -111,7 +111,7 @@ def concat_patches(input_path, output_path, patch_size = 512):
 
 
 if __name__ == '__main__':
-    input_path = '/home/saiteja/flare_IITM_Research/ImageSuperResolution/FlareRemoval/op_test'
+    input_path = './op_test'
     output_path= 'output/patches'
     patch_size = 512
     make_patches(input_path, output_path, patch_size)
