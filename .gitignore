@@ -1,2 +1,5 @@
 env/
 weights/
+venv/
+results/
+output/

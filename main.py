@@ -34,12 +34,14 @@ class SROps:
         val_imgs = glob(val_path + '/*')
 
         for val_img in tqdm(val_imgs):
-
             image = Image.open(val_img).convert('RGB')
+            # max pixel value
+            print('Max pixel value:', np.max(image))
             sr_image = model.predict(image)
-
             img_name = val_img.split('/')[-1]
             output_path = os.path.join(self.output_path,  img_name)
+            # print the maximum pixel value
+            print('Max pixel value:', np.max(sr_image))
             sr_image.save(output_path)
 
 
@@ -47,8 +49,8 @@ class SROps:
 
 
 if __name__ == '__main__':
-    val_path = '/home/saiteja/flare_IITM_Research/datasets/val_input_2k/val_input_2k_bicubic'
-    output_path = '/home/saiteja/flare_IITM_Research/datasets/val_input_2k/val_input_2k_SR'
+    val_path = '/home/saiteja/flare_IITM_Research/ImageSuperResolution/FlareRemoval/output/patches'
+    output_path = './output_patches'
     model_name = 'RealESRGAN'
     device = 'cuda'
     res = 4
