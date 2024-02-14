@@ -1,5 +1,6 @@
 import os
 from glob import glob
+import shutil
 from turtle import width
 from PIL import Image
 import numpy as np
@@ -48,18 +49,19 @@ def make_patches(input_path, output_path, patch_size = 512):
 
     for img in tqdm(imgs):
         image = Image.open(img).convert('RGB')
-        width, height = image.size
+        image = np.array(image)
+        height, width, _ = image.shape
 
         for i in range(0, width, patch_size):
             for j in range(0, height, patch_size):
                 box = (i, j, i+patch_size, j+patch_size)
-                patch = image.crop(box)
-                patch.save(output_path + '/' + img.split('/')[-1].split('.')[0] + '_{}_{}.png'.format(j,i))
+                # patch = image.crop(box)
+                # patch.save(output_path + '/' + img.split('/')[-1].split('.')[0] + '_{}_{}.png'.format(j,i))
+                patch = image[j:j+patch_size, i:i+patch_size]
+                os.makedirs(output_path + '/' + img.split('/')[-1].split('.')[0] , exist_ok=True)
+                cv2.imwrite(output_path + '/' + img.split('/')[-1].split('.')[0] + '/' + img.split('/')[-1].split('.')[0] + '_{}_{}.png'.format(j,i), patch)
 
-
-
-
-
+                
 
 def concat_patches(input_path, output_path, patch_size = 512):
     imgs = glob(input_path + '/*')
@@ -104,21 +106,41 @@ def concat_patches(input_path, output_path, patch_size = 512):
 
         # write the image
         img = np.concatenate(vertical_imgs, axis=1)
-        img = Image.fromarray(img)
-        img.save(output_path + '/' + unq_img + '.png')
-        print(img_name_tag, widht_tag, height_tag)
+        # img = Image.fromarray(img)
+        # # convert to bgr
+
+        # img.save(output_path + '/' + unq_img + '.png')
+        # print(img_name_tag, widht_tag, height_tag)
+
+        cv2.imwrite(output_path + '/' + unq_img + '.png', img)
     
 
+import shutil
+def cleandir(path):
+    shutil.rmtree(path)
 
 if __name__ == '__main__':
-    input_path = './op_test'
+
+    try:
+        # cleandir('output/patches')
+        # cleandir('output/concat')    
+        pass
+    except:
+        pass
+        
+    input_path = '/home/saiteja/Desktop/ntire/Flare7K/output/blend'
     output_path= 'output/patches'
-    patch_size = 512
-    make_patches(input_path, output_path, patch_size)
+    patch_size = 256
+    # make_patches(input_path, output_path, patch_size)
 
-    # do a smart
-    input_path = 'output/patches'
-    output_path = 'output/concat'
-    # concat_imgs(input_path=input_path, output_path, patch_size)
-    # concat_patches(input_path, output_path, patch_size)
+    # # do a smart
 
+    superrespath = '/home/saiteja/flare_IITM_Research/ImageSuperResolution/FlareRemoval/output_super_res'
+    concate_patches_path = 'output/concat'
+    folds = os.listdir(superrespath)
+
+    for fol in tqdm(folds):
+        input_path = os.path.join(superrespath, fol)
+        output_path = os.path.join(concate_patches_path)
+        # concat_imgs(input_path=input_path, output_path, patch_size)
+        concat_patches(input_path, output_path, patch_size)
