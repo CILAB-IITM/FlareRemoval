@@ -1,3 +1,6 @@
 [submodule "scripts/simplified_pix2pixHD"]
 	path = scripts/simplified_pix2pixHD
 	url = https://github.com/saisritejakuppa/simplified_pix2pixHD.git
+[submodule "scripts/Flare7K"]
+	path = scripts/Flare7K
+	url = https://github.com/ykdai/Flare7K.git
