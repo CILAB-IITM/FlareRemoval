@@ -1,0 +1,21 @@
+process = ['train']  #train, eval and test
+
+# train is to train the model
+# evaluate is to check how is the model performing on the given database
+# infer is to run on the final database of images.
+
+
+[train]
+[model]
+epochs = 100
+optimizer = 'adam'
+lr = 0.0001
+batch_size = 32
+
+[model_loss]
+loss = [['VGG_Loss', 1],
+        ['Style_Loss', 1]]
+
+
+[model_metrics]
+metrics = ['PSNR', 'SSIM', 'Lpips']

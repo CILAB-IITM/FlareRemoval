@@ -1,0 +1,3 @@
+[submodule "scripts/simplified_pix2pixHD"]
+	path = scripts/simplified_pix2pixHD
+	url = https://github.com/saisritejakuppa/simplified_pix2pixHD.git

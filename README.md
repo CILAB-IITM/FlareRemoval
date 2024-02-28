@@ -6,7 +6,7 @@ This repo is about flare removal from images.
 ## Database Of Unets
 1. Restormer
 2. NAFNET
-4. Uformers
+3. Uformers
 
 
 ## Loss Functions
