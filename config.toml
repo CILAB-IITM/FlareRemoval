@@ -1,9 +1,9 @@
 process = [
-    # 'model_inference',
-            # 'make_patches',
-            # 'super_res',
-            # 'combine_patches',
-            # 'resize',
+            'model_inference',
+            'make_patches',
+            'super_res',
+            'combine_patches',
+            'resize',
             'evaluate'
             ]
 
