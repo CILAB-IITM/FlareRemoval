@@ -1,0 +1,40 @@
+process = [
+    # 'model_inference',
+            # 'make_patches',
+            # 'super_res',
+            # 'combine_patches',
+            # 'resize',
+            'evaluate'
+            ]
+
+
+
+[model_inference]
+env_path = 'scripts/Flare7K/env/bin/activate'
+input_path = '/home/saiteja/flare_IITM_Research/datasets/val_input_2k/val_input_2k_bicubic'
+output_path = './output/model_inference'
+model_path = '/home/saiteja/Desktop/ntire/Flare7K/net_g_last.pth'
+
+[make_patches]
+input_path = '/home/saiteja/Desktop/ntire/Flare7K/output/blend'
+output_path= 'output/patches'
+patch_size = 256
+
+[super_res]
+input_path = 'output/patches'
+output_path = 'output/super_res'
+
+[combine_patches]
+input_path = 'output/super_res'
+output_path = 'output/combine_patches'
+
+
+[resize]
+model_op_path = 'output/combine_patches'
+og_imgs_path = '/home/saiteja/flare_IITM_Research/datasets/val_input_2k/val_input_2k_bicubic'
+output_path = 'output/resize'
+
+
+[evaluate]
+model_op_path = 'output/resize'
+gt ='/home/saiteja/flare_IITM_Research/datasets/val_input_2k/val_input_2k_bicubic'
