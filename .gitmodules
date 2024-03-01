@@ -1,0 +1,3 @@
+[submodule "scripts/Flare7K"]
+	path = scripts/Flare7K
+	url = https://github.com/ykdai/Flare7K.git
