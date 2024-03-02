@@ -76,7 +76,7 @@ from matplotlib import pyplot as plt
 from data_loader import Flare_Image_Loader
 
 transform_base=transforms.Compose([transforms.Resize((512,512)),
-							  transforms.RandomHorizontalFlip(),
+							  transforms.RandomHorizontalFlip(),                            
 							  transforms.RandomVerticalFlip()
                               ])
 
@@ -86,9 +86,9 @@ transform_flare=transforms.Compose([transforms.RandomAffine(degrees=(0,360),scal
 							  transforms.RandomVerticalFlip()
                               ])
 
-flare_image_loader=Flare_Image_Loader('/home/saiteja/flare_IITM_Research/datasets/iitm_dataset',transform_base,transform_flare)
-flare_image_loader.load_scattering_flare('Flare7K','/home/saiteja/flare_IITM_Research/datasets/Flare7Kpp/Flare7K/Scattering_Flare/Compound_Flare')
-flare_image_loader.load_reflective_flare('Flare7K','/home/saiteja/flare_IITM_Research/datasets/Flare7Kpp/Flare7K/Reflective_Flare')
+flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flickr24K',transform_base,transform_flare)
+flare_image_loader.load_scattering_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Scattering_Flare/Compound_Flare')
+flare_image_loader.load_reflective_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Reflective_Flare')
 
 
 
