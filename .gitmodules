@@ -4,3 +4,9 @@
 [submodule "scripts/Flare7K"]
 	path = scripts/Flare7K
 	url = https://github.com/ykdai/Flare7K.git
+[submodule "scripts/NAFNet"]
+	path = scripts/NAFNet
+	url = https://github.com/megvii-research/NAFNet.git
+[submodule "scripts/Uformer"]
+	path = scripts/Uformer
+	url = https://github.com/ZhendongWang6/Uformer.git
