@@ -32,6 +32,51 @@ api = '4b3b95fc9320ec524f3836b72046de4c1f343a4c'
 # wandb.init(project="FlareRemoval")
 
 
+
+
+		# transform_final = [
+		# 	transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+		# ]
+
+		# transform_final=transforms.Compose(transform_final)
+
+		# if self.mask_type==None:
+		# 	# return adjust_gamma_reverse(base_img),adjust_gamma_reverse(flare_img),adjust_gamma_reverse(merge_img),gamma
+		
+		# 	# m_img = PIL.from_array(adjust_gamma_reverse(merge_img))
+		# 	# b_img = PIL.from_array(adjust_gamma_reverse(base_img))
+
+		# 	m_img = adjust_gamma_reverse(merge_img)
+		# 	# convert to PUIL image
+		# 	# m_img = PIL.Image.fromarray(m_img.permute(1,2,0))
+
+		# 	b_img = adjust_gamma_reverse(base_img)
+		# 	# convert to PUIL image
+		# 	# b_img = PIL.Image.fromarray(b_img.permute(1,2,0))
+
+
+		# 	m_img = transform_final(adjust_gamma_reverse(merge_img))
+		# 	b_img = transform_final(adjust_gamma_reverse(base_img))
+
+		# 	return m_img, b_img
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 replay_pool = ReplayPool(10)
 
 def test(epoch, iteration, generator_ema, test_loader, images_output_dir, device):
@@ -57,28 +102,36 @@ def test(epoch, iteration, generator_ema, test_loader, images_output_dir, device
         cv2.imwrite(out_file, matrix)
 
     
-    loss_fn_alex = lpips.LPIPS(net='alex')
-    loss_fn_vgg = lpips.LPIPS(net='vgg')
-    lpips_alex = 0
-    lpips_vgg = 0
+    # loss_fn_alex = lpips.LPIPS(net='alex')
+    # loss_fn_vgg = lpips.LPIPS(net='vgg')
+    # lpips_alex = 0
+    # lpips_vgg = 0
 
-    with torch.no_grad():
-        # run the ssim on all the images
+    # with torch.no_grad():
+    #     # run the ssim on all the images
 
-        avg_ssim = 0
-        for data, target in test_loader:
-            data = data.to(device)
-            target = target.to(device)
-            out = generator_ema(data)
-            ssim_val = ssim(out, target, data_range=1, reduction="mean")
-            avg_ssim += ssim_val
-            lpips_alex += loss_fn_alex(out, target)
-            lpips_vgg += loss_fn_vgg(out, target)
+    #     avg_ssim = 0
+    #     for data, target in test_loader:
+    #         data = data.to(device)
+    #         target = target.to(device)
+    #         out = generator_ema(data)
 
-        lpips_alex = lpips_alex/len(test_loader)
-        lpips_vgg = lpips_vgg/len(test_loader)
-        ssim_val = avg_ssim/len(test_loader)
-        wandb.log({"ssim": ssim_val, "lpips_alex": lpips_alex, "lpips_vgg": lpips_vgg})
+    #         pairs = torch.cat([data, out, target.to(device)], -1)
+    #         for idx in range(data.shape[0]):
+    #             img = 255*(pairs[idx] + 1)/2
+    #             img = img.cpu().permute(1, 2, 0).clip(0, 255).numpy().astype(np.uint8)
+    #             matrix.append(img)
+
+
+    #         ssim_val = ssim(out, target, data_range=1, reduction="mean")
+    #         avg_ssim += ssim_val
+    #         lpips_alex += loss_fn_alex(out, target)
+    #         lpips_vgg += loss_fn_vgg(out, target)
+
+    #     lpips_alex = lpips_alex/len(test_loader)
+    #     lpips_vgg = lpips_vgg/len(test_loader)
+    #     ssim_val = avg_ssim/len(test_loader)
+    #     wandb.log({"ssim": ssim_val, "lpips_alex": lpips_alex, "lpips_vgg": lpips_vgg})
         
 
 def make_generator():
@@ -257,8 +310,8 @@ def runtrain(config=None):
         criterionVGG = losses.VGGLoss().to(device)
 
         # optimizers
-        G_optim = torch.optim.AdamW(generator.parameters(), lr=1e-4)
-        D_optim = torch.optim.AdamW(discriminator.parameters(), lr=1e-4)
+        G_optim = torch.optim.AdamW(generator.parameters(), config.lr)
+        D_optim = torch.optim.AdamW(discriminator.parameters(), config.lr)
 
         transform_base=transforms.Compose([transforms.Resize((512,512)),
                                     transforms.RandomHorizontalFlip(),                            
@@ -271,14 +324,14 @@ def runtrain(config=None):
                                     transforms.RandomVerticalFlip()
                                     ])
 
-        flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/data',transform_base,transform_flare)
-        # flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flickr24K',transform_base,transform_flare)
+        # flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/data',transform_base,transform_flare)
+        flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flickr24K',transform_base,transform_flare)
 
         flare_image_loader.load_scattering_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Scattering_Flare/Compound_Flare')
         flare_image_loader.load_reflective_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Reflective_Flare')
 
-        # test_flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/train_gt_2k',transform_base,transform_flare)
-        test_flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/data',transform_base,transform_flare)
+        test_flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/train_gt_2k',transform_base,transform_flare)
+        # test_flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/data',transform_base,transform_flare)
         test_flare_image_loader.load_scattering_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Scattering_Flare/Compound_Flare')
         test_flare_image_loader.load_reflective_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Reflective_Flare')
 
@@ -331,9 +384,15 @@ parameters_dict = {
             {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 10},
             {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 1},
             {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 10},
+            {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 0},
         ]
         }
     }
+
+parameters_dict.update({
+    'lr': {
+        'values': [0.0001, 0.00001, 0.001]}
+    })
 
 parameters_dict.update({
     'epochs': {
