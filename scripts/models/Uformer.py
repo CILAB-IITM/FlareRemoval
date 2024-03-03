@@ -15,7 +15,13 @@ import math
 import numpy as np
 import time
 from torch import einsum
-from registry import ARCH_REGISTRY
+
+import sys
+sys.path.append('scripts/Flare7K')
+# from registry import ARCH_REGISTRY
+# from scripts.Flare7K.basicsr.utils.registry import ARCH_REGISTRY
+
+# scripts/Flare7K
 
 #########################################
 class ConvBlock(nn.Module):
@@ -1135,7 +1141,7 @@ class CatCrossUformerLayer(nn.Module):
             flops += blk.flops()
         return flops
 
-@ARCH_REGISTRY.register()
+# @ARCH_REGISTRY.register()
 class Uformer(nn.Module):
     def __init__(self, img_size=128, img_ch=3,output_ch=3,
                  embed_dim=32, depths=[2, 2, 2, 2, 2, 2, 2, 2, 2], num_heads=[1, 2, 4, 8, 16, 16, 8, 4, 2],
