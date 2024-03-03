@@ -17,7 +17,7 @@ from glob import glob
 import os
 import torchvision.transforms as transforms
 from matplotlib import pyplot as plt
-from data_loader import Flare_Image_Loader
+# from data_loader import Flare_Image_Loader
 from scripts.models.Uformer import Uformer
 from scripts.data_operations.uformer_dataset import Image_Dataset
 import os
@@ -25,8 +25,7 @@ import wandb
 
 import torch.nn as nn
 
-from piq import ssim
-import lpips
+# import lpips
 
 
 
@@ -100,6 +99,8 @@ def test(epoch, iteration, generator_ema, test_loader, images_output_dir, device
             img = img.cpu().permute(1, 2, 0).clip(0, 255).numpy().astype(np.uint8)
             matrix.append(img)
         matrix = np.vstack(matrix)
+
+
         wandb.log({"image": [wandb.Image(matrix, caption=f"epoch {epoch}, iteration {iteration}")]})
 
         matrix = cv2.cvtColor(matrix, cv2.COLOR_RGB2BGR)
@@ -146,7 +147,7 @@ def test(epoch, iteration, generator_ema, test_loader, images_output_dir, device
 
 
 
-def make_generator(name = 'pix2pixhd'):
+def make_generator(name = 'uformer'):
     device = torch.device("cuda")
 
     if name == 'pix2pixhd':
@@ -160,6 +161,7 @@ def make_generator(name = 'pix2pixhd'):
     # to be filled by jaikar
     elif name == 'uformer':
         gen = Uformer(img_size=512,img_ch=3,output_ch= 3).to(device)
+        print(gen)
     return gen
 
 
@@ -193,7 +195,7 @@ def process_loss(log, losses, weights =  None):
 
 
 
-from scripts.Flare7K.basicsr.utils.flare_util import blend_light_source,mkdir,predict_flare_from_6_channel,predict_flare_from_3_channel
+# from scripts.Flare7K.basicsr.utils.flare_util import blend_light_source,mkdir,predict_flare_from_6_channel,predict_flare_from_3_channel
 
 
 
@@ -204,7 +206,7 @@ def calc_G_losses(data, target, generator,
     # 3,512,512 -> 6,512,512
     fake = generator(data)
     l1_base = criterionl1(fake,target)
-    loss_vgg  = criterionVGG(fake, data)
+    loss_vgg  = criterionVGG(fake, target)
     pred_fake = discriminator(torch.cat([data, fake], axis=1))
 
     loss_adv = criterionGAN(pred_fake, 1)
@@ -249,15 +251,14 @@ def train(args, epoch,
           train_loader, test_loader, images_output_dir, device, checkpoint_dir
           ):
     
-
-
-
-
     # epoch = args.epoch
     loss_weights = args.loss_weights
     N = 0
     log = {}
     pbar = tqdm(train_loader)
+
+    wandb.log({"epoch": epoch})
+
     for data, target in pbar:
         with torch.no_grad():
 
@@ -310,6 +311,8 @@ def train(args, epoch,
         for k in D_losses:
             wandb.log({f"D_{k}": D_losses[k]})
 
+
+
         D_loss.backward()
         del D_losses
         D_optim.step()
@@ -317,18 +320,26 @@ def train(args, epoch,
         txt = ""
         N += 1
         if (N%100 == 0) or (N + 1 >= len(train_loader)):
-            for i in range(3):
+            for i in range(2):
                 test(epoch, N + i, generator_ema, test_loader, images_output_dir, device)
+        
+        
         for k in log:
             txt += f"{k}: {log[k]/N:.3e} "
         pbar.set_description(txt)
         
-        if (N%1000 == 0) or (N + 1 >= len(train_loader)):
-            import datetime
-            out_file = f"epoch_{epoch}_{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}.pt"
-            out_file = os.path.join(checkpoint_dir, out_file)
-            # torch.save({"G": generator_ema.state_dict(), "D": discriminator.state_dict()}, out_file)
-            print(f"Saved to {out_file}")
+
+    for i in range(2):
+        test(epoch, N, generator_ema, test_loader, images_output_dir, device)
+        
+
+    # if (N%1000 == 0) or (N + 1 >= len(train_loader)):
+    if epoch % 10 == 0:
+        import datetime
+        out_file = f"epoch_{epoch}_{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}.pt"
+        out_file = os.path.join(checkpoint_dir, out_file)
+        torch.save({"G": generator_ema.state_dict(), "D": discriminator.state_dict()}, out_file)
+        print(f"Saved to {out_file}")
 
 
 def runtrain(config=None):
@@ -355,7 +366,7 @@ def runtrain(config=None):
                                 norm="instance", getIntermFeat=True).to(device)
 
         # loss functions
-        criterionGAN = losses.GANLoss(use_lsgan=True).to(device)
+        criterionGAN = losses.GanLoss(use_lsgan=True).to(device)
         criterionFeat = torch.nn.L1Loss().to(device)
         criterionVGG = losses.VGGLoss().to(device)
 
@@ -381,9 +392,8 @@ def runtrain(config=None):
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size =config.batch_size, shuffle = False )
 
-
-        train_loader = torch.utils.data.DataLoader(train_loader, config.batch_size, num_workers=4, shuffle=True)
-        test_loader = torch.utils.data.DataLoader(val_loader, config.batch_size, num_workers=4, shuffle=True)
+        # train_loader = torch.utils.data.DataLoader(train_loader, config.batch_size, num_workers=4, shuffle=True)
+        # test_loader = torch.utils.data.DataLoader(val_loader, config.batch_size, num_workers=4, shuffle=True)
 
         # save the first few images in the batch
         # data, target = next(iter(train_loader))
@@ -401,7 +411,7 @@ def runtrain(config=None):
             train(config, epoch, generator, generator_ema, 
                   discriminator, criterionVGG, criterionGAN, 
                   criterionFeat, G_optim, D_optim, train_loader,
-                    test_loader, images_output_dir, 
+                    val_loader, images_output_dir, 
                     device, checkpoint_dir)
 
 
@@ -437,17 +447,17 @@ sweep_config['metric'] = metric
 parameters_dict = {
     'loss_weights': {
         'values': [
-            {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 10, 'G_l1': 1},
-            {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 1, 'G_l1': 1},
-            {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 10, 'G_l1': 10},
-            {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 0, 'G_l1': 10},
+            # {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 10, 'G_l1': 1},
+            {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 10, 'G_l1': 1},
+            # {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 10, 'G_l1': 5},
+            # {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 0, 'G_l1': 10},
         ]
         }
     }
 
 parameters_dict.update({
     'lr': {
-        'values': [0.0001, 0.00001, 0.001]}
+        'values': [0.0001, 0.00001]}
     })
 
 parameters_dict.update({
@@ -458,7 +468,7 @@ parameters_dict.update({
 
 parameters_dict.update({
     'batch_size': {
-        'value': 8}
+        'value': 4}
     })
 
 
@@ -466,10 +476,11 @@ parameters_dict.update({
 # the folders need to have gt and input subfolders inside them
 parameters_dict.update({
     'dataset_path': {
-        'value': 'dataset/'}
+        'value': 'datasets/'}
+        # 'value': 'dummy_dataset/'}
+
     },
     )
-
 
 parameters_dict.update({
     'color_format': {
@@ -478,5 +489,5 @@ parameters_dict.update({
     )
 
 sweep_config['parameters'] = parameters_dict
-sweep_id = wandb.sweep(sweep_config, project="pytorch-sweeps-demo")
+sweep_id = wandb.sweep(sweep_config, project="FlareRemoval_Uformer_Fulldata")
 wandb.agent(sweep_id, runtrain, count=1)
