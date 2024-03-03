@@ -1,5 +1,5 @@
 import os
-from turtle import color
+# from turtle import color
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
