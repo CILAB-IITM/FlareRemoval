@@ -6,4 +6,4 @@ pip install gdown
 pip install tqdm
 pip install wandb
 pip install lpips
-pip install piq
+pip install piq 
