@@ -1,8 +1,6 @@
 import os
 
 def Generate_Model_Op(model_path, train_data_path):
-    
-
     gt, inp = train_data_path
 
     model_name = model_path.split('/')[-1].split('.')[0]
@@ -34,7 +32,7 @@ def generate_metrics(model_path, gt):
     info, df = metrics.run(og_list, pred_list)
 
     # make a new directory
-    os.makedirs(results_path)
+    os.makedirs(results_path, exist_ok=True)
     # df.to_csv(f'./results/{unq_tag}/results.csv')   
     df.to_csv(f'{results_path}/results.csv')
 
@@ -47,9 +45,21 @@ def generate_metrics(model_path, gt):
 
 if __name__ == '__main__':
     model_path = '/media/cilab/data/cvpr2024/flare_ensemble/FlareRemoval/model/iitm_dataset.pth'
+
+    model_paths = glob('/media/cilab/data/cvpr2024/flare_ensemble/FlareRemoval/model/*/*/*')
+
     train_data_path = ['/home/cilab/teja/FlareRemoval/datasets/input',
                        '/home/cilab/teja/FlareRemoval/datasets/gt']
     
-    
-    # Generate_Model_Op(model_path, train_data_path)
-    generate_metrics(model_path, train_data_path)
+    # from tqdm import tqdm
+    # for model_path in tqdm(model_paths[::-1]):
+    #     Generate_Model_Op(model_path, train_data_path)
+    #     generate_metrics(model_path, train_data_path)
+
+    cpu_count = 4
+    from multiprocessing import Pool
+    with Pool(cpu_count) as p:
+        p.starmap(Generate_Model_Op, [(model_path, train_data_path) for model_path in model_paths])
+        p.starmap(generate_metrics, [(model_path, train_data_path) for model_path in model_paths])
+        p.close()
+        p.join()
