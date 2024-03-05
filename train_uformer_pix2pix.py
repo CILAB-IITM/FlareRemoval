@@ -461,22 +461,22 @@ sweep_config['metric'] = metric
 parameters_dict = {
     'loss_weights': {
         'values': [
-            # {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 10, 'G_l1': 1},
-            {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 0.1, 'G_l1': 10},
-            {'G_adv': 0.5,'G_adv_feat': 0.5,'G_vgg': 2, 'G_l1': 10},
-            # {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 0, 'G_l1': 10},
+            {'G_adv': 0.1,'G_adv_feat': 0.1,'G_vgg': 1, 'G_l1': 10},
+            # {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 0.1, 'G_l1': 10},
+            # {'G_adv': 0.5,'G_adv_feat': 0.5,'G_vgg': 2, 'G_l1': 10},
+            {'G_adv': 0.3,'G_adv_feat': 0.3,'G_vgg': 1, 'G_l1': 10},
         ]
         }
     }
 
 parameters_dict.update({
     'lr': {
-        'values': [0.0001, 0.00001]}
+        'values': [0.00001]}
     })
 
 parameters_dict.update({
     'epochs': {
-        'value': 50}
+        'value': 100}
     })
 
 
