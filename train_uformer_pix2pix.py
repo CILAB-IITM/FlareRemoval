@@ -170,7 +170,7 @@ def make_generator(name = 'uformer'):
     elif name == 'uformer':
         gen = Uformer(img_size=512,img_ch=3,output_ch= 6).to(device)
         # load the pretrained weights
-        path = '/data/home/teja/diffusion_research/flareremoval/FlareRemoval/cropped_512-checkpoints/Flare/epoch_40_2024-03-05 05:56.pt'
+        path = '/data/home/teja/diffusion_research/flareremoval/FlareRemoval/checkpoints/Flare/1709602120.118458/epoch_40_2024-03-05 09:35.pt'
         gen.load_state_dict(torch.load(path)['G'])
         # print(gen)
     return gen
@@ -380,7 +380,7 @@ def runtrain(config=None):
                 ep.data = gp.data.detach()
 
         discriminator = define_D(input_nc = 3 + 3, ndf = 64, 
-                                n_layers_D = 3, num_D = 3, 
+                                n_layers_D = 4, num_D = 3, 
                                 norm="instance", getIntermFeat=True).to(device)
 
         # loss functions
@@ -394,10 +394,21 @@ def runtrain(config=None):
 
         transforms_base = transforms.Compose([
                                                     transforms.RandomCrop((800,800)),
+                                                    # random rotation to 5 degrees
+
+                                                    # random shear to 5 degrees
+                                                    # transforms.RandomAffine(degrees=5, shear=5),
+
                                                     # resize
                                                     transforms.Resize((512, 512)),
+                                                    transforms.RandomRotation(5),
+
                                                     # transforms.RandomResizedCrop(size=(512, 512)),
                                                     transforms.RandomHorizontalFlip(p=0.5),
+
+                                                    # vertical flip
+                                                    transforms.RandomVerticalFlip(p=0.5),
+
                                                     transforms.ToTensor(),
                                                     # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
                                                 ])
@@ -461,10 +472,10 @@ sweep_config['metric'] = metric
 parameters_dict = {
     'loss_weights': {
         'values': [
-            {'G_adv': 0.1,'G_adv_feat': 0.1,'G_vgg': 1, 'G_l1': 10},
+            # {'G_adv': 0.1,'G_adv_feat': 0.1,'G_vgg': 1, 'G_l1': 10},
             # {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 0.1, 'G_l1': 10},
-            # {'G_adv': 0.5,'G_adv_feat': 0.5,'G_vgg': 2, 'G_l1': 10},
-            {'G_adv': 0.3,'G_adv_feat': 0.3,'G_vgg': 1, 'G_l1': 10},
+            {'G_adv': 0.5,'G_adv_feat': 0.5,'G_vgg': 2, 'G_l1': 10},
+            # {'G_adv': 0.3,'G_adv_feat': 0.3,'G_vgg': 1, 'G_l1': 10},
         ]
         }
     }
@@ -491,6 +502,7 @@ parameters_dict.update({
 parameters_dict.update({
     'dataset_path': {
         'value': 'datasets/'}
+        # 'value': '/data/home/teja/diffusion_research/flareremoval/FlareRemoval/badperf_imgs/worst_train'}
         # 'value': 'dummy_dataset/'}
 
     },
@@ -504,4 +516,4 @@ parameters_dict.update({
 
 sweep_config['parameters'] = parameters_dict
 sweep_id = wandb.sweep(sweep_config, project="Pretrained_Paths")
-wandb.agent(sweep_id, runtrain, count=4)
+wandb.agent(sweep_id, runtrain, count=1)

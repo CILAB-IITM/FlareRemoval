@@ -1314,7 +1314,8 @@ class Uformer(nn.Module):
                             norm_layer=norm_layer,
                             use_checkpoint=use_checkpoint,
                             token_projection=token_projection,token_mlp=token_mlp,se_layer=se_layer)
-        self.activation=nn.Sequential(nn.Tanh())
+        # self.activation=nn.Sequential(nn.Tanh())
+        self.activation = nn.Sequential(nn.Sigmoid())
         self.apply(self._init_weights)
 
     def _init_weights(self, m):

@@ -4,6 +4,10 @@ from scripts.NAFNet.basicsr.utils.img_util import padding
 sys.path.append('scripts/simplified_pix2pixHD')
 sys.path.append('scripts/Flare7K')
 
+
+import time
+
+
 import numpy as np
 import cv2
 import torch
@@ -91,12 +95,16 @@ def test(epoch, iteration, generator_ema, test_loader, images_output_dir, device
         data = data.to(device)
         generator_ema.eval()
         out = generator_ema(data)
+        out = out[:, :3, :, :]
         generator_ema.train()
         matrix = []
         pairs = torch.cat([data, out, target.to(device)], -1)
         for idx in range(data.shape[0]):
-            img = 255*(pairs[idx] + 1)/2
+            # img = 255*(pairs[idx] + 1)/2
+            img = pairs[idx] * 255
             img = img.cpu().permute(1, 2, 0).clip(0, 255).numpy().astype(np.uint8)
+
+
             matrix.append(img)
         matrix = np.vstack(matrix)
 
@@ -160,8 +168,11 @@ def make_generator(name = 'uformer'):
         
     # to be filled by jaikar
     elif name == 'uformer':
-        gen = Uformer(img_size=512,img_ch=3,output_ch= 3).to(device)
-        print(gen)
+        gen = Uformer(img_size=512,img_ch=3,output_ch= 6).to(device)
+        # load the pretrained weights
+        path = '/data/home/teja/diffusion_research/flareremoval/FlareRemoval/cropped_512-checkpoints/Flare/epoch_40_2024-03-05 05:56.pt'
+        gen.load_state_dict(torch.load(path)['G'])
+        # print(gen)
     return gen
 
 
@@ -205,6 +216,9 @@ def calc_G_losses(data, target, generator,
     
     # 3,512,512 -> 6,512,512
     fake = generator(data)
+
+    # get the first 3 channels alone
+    fake = fake[:, :3, :, :]
     l1_base = criterionl1(fake,target)
     loss_vgg  = criterionVGG(fake, target)
     pred_fake = discriminator(torch.cat([data, fake], axis=1))
@@ -237,7 +251,11 @@ def calc_G_losses(data, target, generator,
 def calc_D_losses(data, target, generator, discriminator, criterionGAN):
     with torch.no_grad():
         gen_out = generator(data)
+
+        # get the first 3 channels alone
+        gen_out = gen_out[:, :3, :, :]
         fake = replay_pool.query({"input": data.detach(), "output": gen_out.detach()})
+        
     pred_true = discriminator(torch.cat([data, target], axis=1))
     loss_true = criterionGAN(pred_true, 1)
     pred_fake = discriminator(torch.cat([fake["input"], fake["output"]], axis=1))
@@ -362,7 +380,7 @@ def runtrain(config=None):
                 ep.data = gp.data.detach()
 
         discriminator = define_D(input_nc = 3 + 3, ndf = 64, 
-                                n_layers_D = 3, num_D = 2, 
+                                n_layers_D = 3, num_D = 3, 
                                 norm="instance", getIntermFeat=True).to(device)
 
         # loss functions
@@ -375,11 +393,13 @@ def runtrain(config=None):
         D_optim = torch.optim.AdamW(discriminator.parameters(), config.lr)
 
         transforms_base = transforms.Compose([
-                                                    transforms.RandomCrop((512,512)),
+                                                    transforms.RandomCrop((800,800)),
+                                                    # resize
+                                                    transforms.Resize((512, 512)),
                                                     # transforms.RandomResizedCrop(size=(512, 512)),
                                                     transforms.RandomHorizontalFlip(p=0.5),
                                                     transforms.ToTensor(),
-                                                    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+                                                    # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
                                                 ])
         
 
@@ -400,7 +420,7 @@ def runtrain(config=None):
         # show_tensor(data[0])
         # show_tensor(target[0])
 
-        checkpoint_dir = "./checkpoints/Flare/"
+        checkpoint_dir = "./checkpoints/Flare/" + str(time.time())
         images_output_dir = os.path.join(checkpoint_dir, "images")
         if not os.path.exists(images_output_dir):
             os.makedirs(images_output_dir)
@@ -415,9 +435,6 @@ def runtrain(config=None):
                     device, checkpoint_dir)
 
 
-
-
-
 def Synthetic_data_loader(transform_base, transform_flare):
     flare_image_loader=Flare_Image_Loader('/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flickr24K',transform_base,transform_flare)
     flare_image_loader.load_scattering_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Scattering_Flare/Compound_Flare')
@@ -427,9 +444,6 @@ def Synthetic_data_loader(transform_base, transform_flare):
     test_flare_image_loader.load_scattering_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Scattering_Flare/Compound_Flare')
     test_flare_image_loader.load_reflective_flare('Flare7K','/data/home/teja/diffusion_research/flareremoval/FlareRemoval/datasets/Flare7Kpp/Flare7K/Reflective_Flare')
     return flare_image_loader, test_flare_image_loader
-
-
-
 
 
 sweep_config = {
@@ -448,8 +462,8 @@ parameters_dict = {
     'loss_weights': {
         'values': [
             # {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 10, 'G_l1': 1},
-            {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 10, 'G_l1': 1},
-            # {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 10, 'G_l1': 5},
+            {'G_adv': 1,'G_adv_feat': 1,'G_vgg': 0.1, 'G_l1': 10},
+            {'G_adv': 0.5,'G_adv_feat': 0.5,'G_vgg': 2, 'G_l1': 10},
             # {'G_adv': 1,'G_adv_feat': 10,'G_vgg': 0, 'G_l1': 10},
         ]
         }
@@ -462,13 +476,13 @@ parameters_dict.update({
 
 parameters_dict.update({
     'epochs': {
-        'value': 100}
+        'value': 50}
     })
 
 
 parameters_dict.update({
     'batch_size': {
-        'value': 4}
+        'value': 2}
     })
 
 
@@ -484,10 +498,10 @@ parameters_dict.update({
 
 parameters_dict.update({
     'color_format': {
-        'value': ['rgb', 'ycbcr']}
+        'values': ['rgb']}
     },
     )
 
 sweep_config['parameters'] = parameters_dict
-sweep_id = wandb.sweep(sweep_config, project="FlareRemoval_Uformer_Fulldata")
-wandb.agent(sweep_id, runtrain, count=1)
+sweep_id = wandb.sweep(sweep_config, project="Pretrained_Paths")
+wandb.agent(sweep_id, runtrain, count=4)
